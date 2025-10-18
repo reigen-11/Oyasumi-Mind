@@ -25,18 +25,30 @@ def remove_duplicates(df: pd.DataFrame, subset_cols: Optional[List[str]] = None)
 def detect_outliers_iqr_dataset(
     df: pd.DataFrame, 
     multiplier: float = 1.5, 
-    return_bounds: bool = False
-) -> Union[Dict[str, pd.DataFrame], Dict[str, Tuple[pd.DataFrame, float, float]]]:
+    return_bounds: bool = False,
+    cols: list = None
+) -> Union[pd.DataFrame, Dict[str, Tuple[pd.DataFrame, float, float]]]:
     try:
         numeric_cols = df.select_dtypes(include='number').columns.tolist()
-        if not numeric_cols:
+
+        if cols is not None:
+            selected_cols = [col for col in cols if col in numeric_cols]
+            if not selected_cols:
+                logging.warning("No valid numeric columns found in 'cols' list.")
+                return df
+        else:
+            selected_cols = numeric_cols
+
+        if not selected_cols:
             logging.warning("No numeric columns found in the dataset.")
             return df
 
-        logging.info(f"Removing outliers for numeric columns: {numeric_cols}")
+        logging.info(f"Removing outliers for columns: {selected_cols}")
 
         all_outlier_indices = set()
-        for column in numeric_cols:
+        bounds_info = {}
+
+        for column in selected_cols:
             q1 = df[column].quantile(0.25)
             q3 = df[column].quantile(0.75)
             iqr = q3 - q1
@@ -54,13 +66,19 @@ def detect_outliers_iqr_dataset(
                 f"Column '{column}': {count} outliers ({pct:.2f}%) removed using bounds [{lower_bound}, {upper_bound}]."
             )
 
+            if return_bounds:
+                bounds_info[column] = (lower_bound, upper_bound)
+
         df_cleaned = df.drop(index=all_outlier_indices)
         logging.info(f"Total rows removed: {len(all_outlier_indices)}. Remaining rows: {df_cleaned.shape[0]}")
+
+        if return_bounds:
+            return {"data": df_cleaned, "bounds": bounds_info}
         return df_cleaned
 
     except Exception as e:
-        logging.error(f"Error in remove_outliers_iqr: {e}")
-        raise CustomException(f"Error in remove_outliers_iqr: {e}")
+        logging.error(f"Error in detect_outliers_iqr_dataset: {e}")
+        raise CustomException(f"Error in detect_outliers_iqr_dataset: {e}")
 
 
 

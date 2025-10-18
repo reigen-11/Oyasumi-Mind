@@ -35,7 +35,6 @@ class ModelTrainer:
         logging.info(f"{'+' * 150}")
         logging.info("2. Initiated Model Training")
         try:
-            # Placeholder for model training logic
             logging.info(f"Training model with data from {data_path}")
             df = pd.read_csv(data_path)
             logging.info(f"Dataset shape for training: {df.shape}")
@@ -48,7 +47,7 @@ class ModelTrainer:
             logging.info(f"Splitted data into train and test sets and stratification on target column")
 
             logging.info("Initializing model for training")
-            # Dummy model training code
+
             model = LGBMRegressor()
             model.fit(X_train, y_train)
             logging.info("✅ Model training complete")
@@ -63,7 +62,6 @@ class ModelTrainer:
                 "MAE": mean_absolute_error(y_test, y_pred),
                 "Explained_Variance": explained_variance_score(y_test, y_pred)
             }
-            # Access the path from the main config object instead
             metrics_path = self.config['model_training_settings']['trained_model_metrics_path']
             with open(metrics_path, 'w') as f:
                 json.dump(metrics, f)

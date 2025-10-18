@@ -29,6 +29,7 @@ class DataIngestionConfig:
     categorical_columns: list[str]
     drop_columns_list: list[str]
     label_encoder_path: str 
+    outliers: list[str]
 
 class DataIngestion:
     def __init__(self, config_path: str = "config.json"):
@@ -47,7 +48,8 @@ class DataIngestion:
             numeric_columns=column_settings['numeric'],
             categorical_columns=column_settings['categorical'],
             drop_columns_list=column_settings['drop'],
-            label_encoder_path=ingestion_settings['label_encoder_path']
+            label_encoder_path=ingestion_settings['label_encoder_path'],
+            outliers=column_settings['outliers']
         )
 
     def initiate_data_ingestion(self):
@@ -62,7 +64,7 @@ class DataIngestion:
                 logging.info("✅ Duplicates removed successfully")
 
             if self.ingestion_config.detect_outliers_flag:
-                df = detect_outliers_iqr_dataset(df, multiplier=self.ingestion_config.outlier_multiplier)
+                df = detect_outliers_iqr_dataset(df, multiplier=self.ingestion_config.outlier_multiplier, cols=self.ingestion_config.outliers, return_bounds=True)
                 logging.info("✅ Outlier detection and cleaning complete")
             
             df = convert_column_types(

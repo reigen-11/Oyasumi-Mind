@@ -13,25 +13,44 @@ from utils.logger import logging
 from utils.custom_exceptions import CustomException
 
 
+# ---- Config + app ----
 CONFIG_PATH = os.environ.get("CONFIG_PATH", "config.json")
 with open(CONFIG_PATH, "r") as cf:
     config = json.load(cf)
 
 app = Flask(__name__)
 app.config.update({
-    "ENV": os.environ.get("FLASK_ENV", "development"),
-    "DEBUG": os.environ.get("FLASK_DEBUG", "1") == "1"
+    "ENV": os.environ.get("FLASK_ENV", "production"),
+    # DEBUG controlled explicitly by FLASK_DEBUG env var below
+    "DEBUG": False
 })
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-change-me")
 
 logger = logging.getLogger("mental_wellness_app")
 
+# allow runtime log level override
+_log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+try:
+    logger.setLevel(getattr(logging, _log_level))
+except Exception:
+    logger.setLevel(logging.INFO)
 
-MODEL_PATH = os.environ.get("MODEL_PATH", config.get("model_training_settings", {}).get("trained_model_path"))
-ENCODER_PATH = os.environ.get("ENCODER_PATH", config.get("data_ingestion_settings", {}).get("label_encoder_path"))
+
+MODEL_PATH = os.environ.get(
+    "MODEL_PATH",
+    config.get("model_training_settings", {}).get("trained_model_path")
+)
+ENCODER_PATH = os.environ.get(
+    "ENCODER_PATH",
+    config.get("data_ingestion_settings", {}).get("label_encoder_path")
+)
 
 
+# ---- utility functions ----
 def safe_load_pickle(path, name="object"):
+    """Load pickle but never raise — return None on any error and log it.
+    This prevents a failing model load from crashing the process in production.
+    """
     if not path:
         logger.warning("No path provided for %s; returning None", name)
         return None
@@ -40,23 +59,17 @@ def safe_load_pickle(path, name="object"):
             obj = pickle.load(f)
         logger.info("Loaded %s from %s", name, path)
         return obj
+    except FileNotFoundError:
+        logger.warning("File not found for %s: %s", name, path)
+        return None
     except Exception as e:
-        msg = f"Failed to load {name} from {path}: {e}"
-        logger.exception(msg)
-        raise CustomException(msg)
+        logger.exception("Failed to load %s from %s: %s", name, path, e)
+        return None
 
-model = None
-encoder = None
-try:
-    model = safe_load_pickle(MODEL_PATH, name="model")
-except CustomException as ce:
-    logger.warning("Model not loaded: %s", ce)
 
-try:
-    encoder = safe_load_pickle(ENCODER_PATH, name="encoder")
-except CustomException as ce:
-    logger.warning("Encoder not loaded: %s", ce)
-    encoder = None
+# load model & encoder (non-fatal if missing)
+model = safe_load_pickle(MODEL_PATH, name="model")
+encoder = safe_load_pickle(ENCODER_PATH, name="encoder")
 
 
 FEATURES = config["column_settings"]["features"]
@@ -184,159 +197,247 @@ def require_json(f):
     return decorated
 
 
+ranges = {
+    "age": [10, 90],
+    "sleep_hours": [0, 24],
+    "sleep_quality_1_5": [1, 5],
+    "stress_level_0_10": [0, 10],
+    "productivity_0_100": [0, 100],
+    "exercise_minutes_per_week": [0, 1000],
+    "social_hours_per_week": [0, 168]
+}
+
+
 INDEX_HTML = """
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>OYASUMI-MIND — Check your Mental Wellness Index</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    :root {
-      --primary: #1976d2;
-      --primary-light: #e3f2fd;
-      --warn: #f59e0b;
-      --warn-bg: #fff7e6;
-      --bg: #f9fafb;
-      --radius: 10px;
-    }
-    body {
-      font-family: "Inter", Arial, sans-serif;
-      background: var(--bg);
-      margin: 0;
-      padding: 20px;
-      color: #222;
-    }
-    .container {
-      max-width: 780px;
-      margin: 0 auto;
-      background: #fff;
-      border-radius: var(--radius);
-      padding: 24px 28px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-    h1 {
-      text-align: center;
-      color: var(--primary);
-      margin-bottom: 24px;
-    }
-    form div {
-      margin-bottom: 18px;
-    }
-    label {
-      font-weight: 600;
-      display: block;
-      margin-bottom: 6px;
-    }
-    input, select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: var(--radius);
-      font-size: 15px;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    input:focus, select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-light);
-      outline: none;
-    }
-    .btn {
-      display: block;
-      width: 100%;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 12px;
-      border-radius: var(--radius);
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.25s;
-    }
-    .btn:hover {
-      background: #1565c0;
-    }
-    .result, .warn {
-      padding: 14px 16px;
-      border-left: 5px solid;
-      border-radius: var(--radius);
-      margin-top: 16px;
-      line-height: 1.5;
-    }
-    .result {
-      background: var(--primary-light);
-      border-color: var(--primary);
-    }
-    .warn {
-      background: var(--warn-bg);
-      border-color: var(--warn);
-    }
-    pre {
-      white-space: pre-wrap;
-      font-family: monospace;
-      background: #f5f5f5;
-      padding: 10px;
-      border-radius: var(--radius);
-      overflow-x: auto;
-    }
-    @media (max-width: 600px) {
-      .container {
-        padding: 18px;
-      }
-      h1 {
-        font-size: 1.4rem;
-      }
-    }
-  </style>
+    <meta charset="utf-8" />
+    <title>OYASUMI-MIND — Daily Wellness Insights</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --primary: #1976d2;
+            --primary-light: #e3f2fd;
+            --warn: #f59e0b;
+            --warn-bg: #fff7e6;
+            --info: #6b7280;
+            --info-bg: #f3f4f6;
+            --bg: #f9fafb;
+            --radius: 10px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: #222;
+        }
+
+        .container {
+            max-width: 780px;
+            margin: 20px auto;
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        p.intro {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 24px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        form div {
+            margin-bottom: 18px;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: var(--radius);
+            font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+            outline: none;
+        }
+
+        select:required:invalid {
+            color: #888;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.25s;
+        }
+
+        .btn:hover {
+            background: #1565c0;
+        }
+
+        .result, .warn, .disclaimer {
+            padding: 14px 16px;
+            border-left: 5px solid;
+            border-radius: var(--radius);
+            margin-top: 24px;
+            line-height: 1.5;
+        }
+
+        .result {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .warn {
+            background: var(--warn-bg);
+            border-color: var(--warn);
+        }
+
+        .disclaimer {
+            background: var(--info-bg);
+            border-color: var(--info);
+            font-size: 0.9rem;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: monospace;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: var(--radius);
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
+        details summary {
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 8px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: #777;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 18px;
+                margin: 10px auto;
+            }
+            h1 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🧠 OYASUMI-MIND</h1>
-    <p style="text-align:center;margin-top:-10px;margin-bottom:24px;color:#555">
-      Check your <strong>Mental Wellness Index</strong> by entering your daily routine details
-    </p>
+    <div class="container">
+        <h1>🧠 OYASUMI-MIND</h1>
+        <p class="intro">
+            Discover patterns in your daily routine. By answering a few questions, this tool can offer insights into your general wellness based on your habits.
+        </p>
 
-    <form method="post" action="/predict">
-      {% for f in features %}
-        <div>
-          <label>{{ f.replace('_', ' ').title() }}</label>
-          {% if f in categorical %}
-            <select name="{{ f }}">
-              {% for opt in options[f] %}
-                <option value="{{ opt }}">{{ opt }}</option>
-              {% endfor %}
-            </select>
-          {% else %}
-            <input name="{{ f }}" type="number" step="any" placeholder="Enter {{ f.replace('_',' ') }}" required />
-          {% endif %}
+        <form method="post" action="/predict" autocomplete="off">
+            {% for f in features %}
+            <div>
+                <label for="{{ f }}">{{ f.replace('_', ' ').title() }}</label>
+                
+                {% if f in categorical %}
+                    <select name="{{ f }}" id="{{ f }}" required>
+                        <option value="" disabled selected>Select an option</option>
+                        {% for opt in options[f] %}
+                        <option value="{{ opt }}">{{ opt }}</option>
+                        {% endfor %}
+                    </select>
+
+                {% elif f in ranges %}
+                    <select name="{{ f }}" id="{{ f }}" required>
+                        <option value="" disabled selected>Select {{ ranges[f][0] }}–{{ ranges[f][1] }}</option>
+                        {% for i in range(ranges[f][0], ranges[f][1]+1) %}
+                        <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+
+                {% else %}
+                    <input name="{{ f }}" id="{{ f }}" type="number" step="any" required />
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <button class="btn" type="submit">Analyze My Routine</button>
+        </form>
+
+        {% if warnings %}
+            {% for w in warnings %}
+            <div class="warn">⚠️ <strong>Heads up:</strong> {{ w }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% if error %}
+        <div class="warn">
+            <strong>Oops! Something went wrong.</strong>
+            <p>There was a technical issue processing your request. Please try again.</p>
+            <pre>{{ error }}</pre>
         </div>
-      {% endfor %}
-      <button class="btn" type="submit">Predict Mental Wellness</button>
-    </form>
+        {% endif %}
 
-    {% if warnings %}
-      {% for w in warnings %}
-        <div class="warn">⚠️ {{ w }}</div>
-      {% endfor %}
-    {% endif %}
+        {% if prediction is not none %}
+        <div class="result">
+            <strong>Your Insight:</strong> {{ prediction }}
+            <details>
+                <summary>Show my inputs</summary>
+                <pre>{{ input_values }}</pre>
+            </details>
+        </div>
+        {% endif %}
 
-    {% if error %}
-      <div class="result"><strong>Error:</strong><pre>{{ error }}</pre></div>
-    {% endif %}
+        <div class="disclaimer">
+            <strong>Important Disclaimer:</strong> This tool is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of a qualified health provider with any questions you may have regarding a medical condition.
+        </div>
+    </div>
 
-    {% if prediction is not none %}
-      <div class="result">
-        <strong>Prediction:</strong> {{ prediction }}
-        <pre>{{ input_values }}</pre>
-      </div>
-    {% endif %}
-  </div>
+    <footer>
+        <p>&copy; 2025 OYASUMI-MIND. All rights reserved.</p>
+    </footer>
 </body>
 </html>
 """
-
-
 
 @app.route("/", methods=["GET"])
 def index():
@@ -348,9 +449,9 @@ def index():
         prediction=None,
         warnings=None,
         error=None,
-        input_values=None
+        input_values=None,
+        ranges=ranges
     )
-
 
 
 @app.route("/predict", methods=["POST"])
@@ -530,8 +631,28 @@ def predict_json():
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok", "time": datetime.utcnow().isoformat() + "Z"}), 200
+
+
+@app.route("/ready", methods=["GET"])
+def ready():
+    ready_state = model is not None
+    return jsonify({
+        "ready": ready_state,
+        "model_loaded": ready_state,
+        "time": datetime.utcnow().isoformat() + "Z"
+    }), (200 if ready_state else 503)
+
+
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", 5000))
-    logger.info("Starting dev Flask server on %s:%s", host, port)
-    app.run(host=host, port=port, debug=app.config.get("DEBUG", True))
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1" or os.environ.get("FLASK_ENV", "") == "development"
+    logger.info("Starting Flask server on %s:%s (debug=%s)", host, port, debug)
+    try:
+        app.run(host=host, port=port, debug=debug)
+    except Exception:
+        logger.exception("Exception while running Flask development server")
+        raise

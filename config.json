@@ -10,6 +10,7 @@
   },
 
   "column_settings": {
+    "outliers": "screen_time_hours",
     "numeric": [
       "age",
       "sleep_hours",
