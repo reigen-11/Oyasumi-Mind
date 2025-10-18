@@ -1,0 +1,78 @@
+{
+  "data_ingestion_settings": {
+    "raw_data_path": "Data/MentalWellness.csv",
+    "cleaned_data_path": "Data/Cleaned_MentalWellness.csv",
+    "transformed_data_path": "Data/Transformed_MentalWellness.csv",
+    "remove_duplicates": true,
+    "detect_outliers": true,
+    "outlier_multiplier": 1.5,
+    "label_encoder_path": "Models/label_encoder.pkl"
+  },
+
+  "column_settings": {
+    "numeric": [
+      "age",
+      "sleep_hours",
+      "stress_level_0_10",
+      "productivity_0_100",
+      "mental_wellness_index_0_100"
+    ],
+    "categorical": [
+      "gender",
+      "occupation",
+      "work_mode"
+    ],
+    "drop": [
+      "Unnamed: 15",
+      "user_id",
+      "screen_diff",
+      "age_group",
+      "wellness_group",
+      "screen_group"
+    ],
+    "features": [
+    "age",
+    "gender",
+    "occupation",
+    "work_mode",
+    "screen_time_hours",
+    "work_screen_hours",
+    "leisure_screen_hours",
+    "sleep_hours",
+    "sleep_quality_1_5",
+    "stress_level_0_10",
+    "productivity_0_100",
+    "exercise_minutes_per_week",
+    "social_hours_per_week"
+  ],
+    "target": "mental_wellness_index_0_100"
+  },
+
+  "cleaning_rules": {
+    "age": [10, 90],
+    "sleep_hours": [0, 24],
+    "stress_level_0_10": [0, 10],
+    "productivity_0_100": [0, 100],
+    "mental_wellness_index_0_100": [0, 100]
+  },
+
+  "system_settings": {
+    "log_level": "INFO",
+    "pandas_display_max_rows": 50,
+    "pandas_display_max_cols": 20,
+    "debug": true,
+    "allow_custom_exceptions": true
+  },
+
+  "model_training_settings": {
+    "ml_models_dir": "Models/",
+    "trained_model_path": "Models/trained_model.pkl",
+    "test_size": 0.2,
+    "random_state": 42,
+    "trained_model_metrics_path": "Artifacts/Trained_model/trained_model_metrics.json",
+    "trained_model_artifact_dir": "Artifacts/Trained_model/",
+    "feature_importance_plot_path": "Artifacts/Trained_model/feature_importance.png",
+    "predicted_vs_actual_plot_path": "Artifacts/Trained_model/predicted_vs_actual.png",
+    "residuals_plot_path": "Artifacts/Trained_model/residuals.png"
+  }
+}

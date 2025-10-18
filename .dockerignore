@@ -1,0 +1,52 @@
+# Python cache and virtual environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+env/
+ENV/
+
+# Logs and temp files
+*.log
+logs/
+*.tmp
+*.swp
+
+# Data and artifacts
+
+Artifacts/
+*.csv
+*.json
+*.pkl
+*.xlsx
+*.ipynb
+*.h5
+*.db
+
+# Build / dist / packaging
+build/
+dist/
+.eggs/
+*.egg
+setup.cfg
+MANIFEST
+
+# Git and local tools
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+*.code-workspace
+
+# Environment and secrets
+.env
+.env.*
+config.local.json
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mental Wellness Index Predictor 🧘‍♀️</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      background: #f4f8fb;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      background: linear-gradient(120deg, #6a11cb, #2575fc);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+      width: 100%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    h1 { margin: 0; font-size: 2rem; }
+    p { margin-top: 0.5rem; }
+
+    main {
+      background: white;
+      max-width: 850px;
+      width: 95%;
+      margin: 2rem auto;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem 2rem;
+    }
+
+    fieldset {
+      border: none;
+      padding: 0;
+      margin: 1rem 0;
+      grid-column: span 2;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      background-color: #fafafa;
+      transition: border-color 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #2575fc;
+      box-shadow: 0 0 3px rgba(37,117,252,0.4);
+    }
+
+    button {
+      grid-column: span 2;
+      padding: 0.9rem 1.2rem;
+      background: linear-gradient(90deg, #2575fc, #6a11cb);
+      color: white;
+      font-weight: bold;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(90deg, #6a11cb, #2575fc);
+      transform: scale(1.02);
+    }
+
+    .result, .error {
+      grid-column: span 2;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1.5rem;
+    }
+
+    .result {
+      background: #e8f5e9;
+      border-left: 5px solid #4caf50;
+    }
+
+    .error {
+      background: #fdecea;
+      border-left: 5px solid #f44336;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: #777;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 700px) {
+      form { grid-template-columns: 1fr; }
+      button { grid-column: span 1; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Mental Wellness Index Predictor 🧠</h1>
+    <p>Estimate your mental wellness score based on your lifestyle and daily habits.</p>
+  </header>
+
+  <main>
+    <form method="post" action="/predict">
+      <!-- Personal & Work Details -->
+      <fieldset>
+        <legend><h2>👤 Personal & Work Information</h2></legend>
+
+        <div>
+          <label for="age">Age</label>
+          <input type="number" id="age" name="age" placeholder="e.g., 28" min="10" max="90" step="1" value="{{ g.form_data.get('age', '') }}" required>
+        </div>
+
+        <div>
+          <label for="gender">Gender</label>
+          <select id="gender" name="gender" required>
+            <option value="" disabled selected>Select your gender</option>
+            {% set selected_gender = g.form_data.get('gender') %}
+            <option value="Female" {% if selected_gender == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Male" {% if selected_gender == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Non-binary/Other" {% if selected_gender == 'Non-binary/Other' %}selected{% endif %}>Non-binary/Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="occupation">Occupation</label>
+          <select id="occupation" name="occupation" required>
+            <option value="" disabled selected>Select occupation</option>
+            {% set occ = g.form_data.get('occupation') %}
+            <option value="Employed" {% if occ == 'Employed' %}selected{% endif %}>Employed</option>
+            <option value="Student" {% if occ == 'Student' %}selected{% endif %}>Student</option>
+            <option value="Self-employed" {% if occ == 'Self-employed' %}selected{% endif %}>Self-employed</option>
+            <option value="Unemployed" {% if occ == 'Unemployed' %}selected{% endif %}>Unemployed</option>
+            <option value="Retired" {% if occ == 'Retired' %}selected{% endif %}>Retired</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="work_mode">Work Mode</label>
+          <select id="work_mode" name="work_mode" required>
+            <option value="" disabled selected>Select work mode</option>
+            {% set wm = g.form_data.get('work_mode') %}
+            <option value="Remote" {% if wm == 'Remote' %}selected{% endif %}>Remote</option>
+            <option value="In-person" {% if wm == 'In-person' %}selected{% endif %}>In-person</option>
+            <option value="Hybrid" {% if wm == 'Hybrid' %}selected{% endif %}>Hybrid</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <!-- Screen & Activity Metrics -->
+      <fieldset>
+        <legend><h2>💻 Screen Time & Lifestyle</h2></legend>
+
+        <div>
+          <label for="screen_time_hours">Total Screen Time (hrs/day)</label>
+          <input type="number" id="screen_time_hours" name="screen_time_hours" step="any" min="0" max="24"
+                 placeholder="e.g., 10" value="{{ g.form_data.get('screen_time_hours', '') }}" required>
+        </div>
+
+        <div>
+          <label for="work_screen_hours">Work Screen Time (hrs/day)</label>
+          <input type="number" id="work_screen_hours" name="work_screen_hours" step="any" min="0" max="24"
+                 placeholder="e.g., 6" value="{{ g.form_data.get('work_screen_hours', '') }}" required>
+        </div>
+
+        <div>
+          <label for="leisure_screen_hours">Leisure Screen Time (hrs/day)</label>
+          <input type="number" id="leisure_screen_hours" name="leisure_screen_hours" step="any" min="0" max="24"
+                 placeholder="e.g., 4" value="{{ g.form_data.get('leisure_screen_hours', '') }}" required>
+        </div>
+
+        <div>
+          <label for="sleep_hours">Sleep Hours (per day)</label>
+          <input type="number" id="sleep_hours" name="sleep_hours" step="any" min="0" max="24"
+                 placeholder="e.g., 7.5" value="{{ g.form_data.get('sleep_hours', '') }}" required>
+        </div>
+      </fieldset>
+
+      <!-- Mental & Physical Wellness -->
+      <fieldset>
+        <legend><h2>🧘 Wellness & Activity</h2></legend>
+
+        <div>
+          <label for="sleep_quality_1_5">Sleep Quality (1–5)</label>
+          <input type="number" id="sleep_quality_1_5" name="sleep_quality_1_5" step="1" min="1" max="5"
+                 placeholder="e.g., 4" value="{{ g.form_data.get('sleep_quality_1_5', '') }}" required>
+        </div>
+
+        <div>
+          <label for="stress_level_0_10">Stress Level (0–10)</label>
+          <input type="number" id="stress_level_0_10" name="stress_level_0_10" step="any" min="0" max="10"
+                 placeholder="e.g., 3" value="{{ g.form_data.get('stress_level_0_10', '') }}" required>
+        </div>
+
+        <div>
+          <label for="productivity_0_100">Productivity (0–100)</label>
+          <input type="number" id="productivity_0_100" name="productivity_0_100" step="any" min="0" max="100"
+                 placeholder="e.g., 80" value="{{ g.form_data.get('productivity_0_100', '') }}" required>
+        </div>
+
+        <div>
+          <label for="exercise_minutes_per_week">Exercise (min/week)</label>
+          <input type="number" id="exercise_minutes_per_week" name="exercise_minutes_per_week" step="any" min="0"
+                 placeholder="e.g., 150" value="{{ g.form_data.get('exercise_minutes_per_week', '') }}" required>
+        </div>
+
+        <div>
+          <label for="social_hours_per_week">Social Interaction (hrs/week)</label>
+          <input type="number" id="social_hours_per_week" name="social_hours_per_week" step="any" min="0"
+                 placeholder="e.g., 5" value="{{ g.form_data.get('social_hours_per_week', '') }}" required>
+        </div>
+      </fieldset>
+
+      <button type="submit">Predict Mental Wellness Index</button>
+
+      {% if error or prediction is not none %}
+      <div class="{% if error %}error{% else %}result{% endif %}">
+        {% if error %}
+          <h3>Error</h3>
+          <p>{{ error }}</p>
+        {% else %}
+          <h3>Predicted {{ target.replace('_',' ').title() }}</h3>
+          <p style="font-size: 1.5rem; font-weight: bold; color: #2e7d32;">{{ prediction }}</p>
+          <details>
+            <summary>View Input Summary</summary>
+            <pre><code>{{ input_values }}</code></pre>
+          </details>
+        {% endif %}
+      </div>
+      {% endif %}
+    </form>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Mental Wellness Predictor | Built with ❤️ for better self-awareness</p>
+  </footer>
+</body>
+</html>
