@@ -1,0 +1,59 @@
+2025-10-18 23:30:26,385 - INFO - Configuration loaded from config.json
+2025-10-18 23:30:26,385 - INFO - ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2025-10-18 23:30:26,385 - INFO - 1. Initiated Data Ingestion
+2025-10-18 23:30:26,388 - INFO - Reading the dataset as dataframe
+2025-10-18 23:30:26,390 - INFO - Removed duplicates based on columns: None
+2025-10-18 23:30:26,390 - INFO - ✅ Duplicates removed successfully
+2025-10-18 23:30:26,390 - WARNING - No valid numeric columns found in 'cols' list.
+2025-10-18 23:30:26,390 - INFO - ✅ Outlier detection and cleaning complete
+2025-10-18 23:30:26,391 - INFO - Converted column 'age' to numeric type Int64.
+2025-10-18 23:30:26,391 - WARNING - Could not cast column 'sleep_hours' to Int64: cannot safely cast non-equivalent object to int64. Kept as numeric (float) with non-numeric values coerced to NaN.
+2025-10-18 23:30:26,392 - WARNING - Could not cast column 'stress_level_0_10' to Int64: cannot safely cast non-equivalent float64 to int64. Kept as numeric (float) with non-numeric values coerced to NaN.
+2025-10-18 23:30:26,392 - WARNING - Could not cast column 'productivity_0_100' to Int64: cannot safely cast non-equivalent float64 to int64. Kept as numeric (float) with non-numeric values coerced to NaN.
+2025-10-18 23:30:26,392 - WARNING - Could not cast column 'mental_wellness_index_0_100' to Int64: cannot safely cast non-equivalent float64 to int64. Kept as numeric (float) with non-numeric values coerced to NaN.
+2025-10-18 23:30:26,393 - INFO - Converted column 'gender' to categorical type.
+2025-10-18 23:30:26,393 - INFO - Converted column 'occupation' to categorical type.
+2025-10-18 23:30:26,393 - INFO - Converted column 'work_mode' to categorical type.
+2025-10-18 23:30:26,393 - INFO - ✅ Column type conversions complete
+2025-10-18 23:30:26,394 - INFO - Applied cleaning rules to column 'age' with bounds [10, 90].
+2025-10-18 23:30:26,394 - INFO - Applied cleaning rules to column 'sleep_hours' with bounds [0, 24].
+2025-10-18 23:30:26,395 - INFO - Applied cleaning rules to column 'stress_level_0_10' with bounds [0, 10].
+2025-10-18 23:30:26,395 - INFO - Applied cleaning rules to column 'productivity_0_100' with bounds [0, 100].
+2025-10-18 23:30:26,395 - INFO - Applied cleaning rules to column 'mental_wellness_index_0_100' with bounds [0, 100].
+2025-10-18 23:30:26,396 - INFO - ✅ Invalid value cleaning complete
+2025-10-18 23:30:26,396 - INFO - Dropped columns: ['Unnamed: 15', 'user_id']
+2025-10-18 23:30:26,396 - INFO - ✅ Dropped unnecessary columns: ['Unnamed: 15', 'user_id', 'screen_diff', 'age_group', 'wellness_group', 'screen_group']
+2025-10-18 23:30:26,399 - INFO - 💾 Cleaned data saved to Data/Cleaned_MentalWellness.csv
+2025-10-18 23:30:26,399 - INFO - ✅ Final shape: (400, 14)
+🧩 Columns: age, gender, occupation, work_mode, screen_time_hours, work_screen_hours, leisure_screen_hours, sleep_hours, sleep_quality_1_5, stress_level_0_10, productivity_0_100, exercise_minutes_per_week, social_hours_per_week, mental_wellness_index_0_100
+2025-10-18 23:30:26,399 - INFO - ------------------------------------------------------------------------------------------------------------------------------------------------------
+2025-10-18 23:30:26,399 - INFO - Initializing Data Encoding
+2025-10-18 23:30:26,400 - INFO - ✅ Encoded column 'gender' with 3 unique classes.
+2025-10-18 23:30:26,400 - INFO - ✅ Encoded column 'occupation' with 5 unique classes.
+2025-10-18 23:30:26,401 - INFO - ✅ Encoded column 'work_mode' with 3 unique classes.
+2025-10-18 23:30:26,401 - INFO - ✅ Data Encoding complete
+2025-10-18 23:30:26,401 - INFO - Dropping any NANs after encoding
+2025-10-18 23:30:26,401 - INFO - 🧹 Dropped 0 rows containing any NaN values.
+2025-10-18 23:30:26,404 - INFO - ======================================================================================================================================================
+2025-10-18 23:30:26,404 - INFO - Configuration loaded from config.json
+2025-10-18 23:30:26,404 - INFO - ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2025-10-18 23:30:26,404 - INFO - 2. Initiated Model Training
+2025-10-18 23:30:26,404 - INFO - Training model with data from Data/Transformed_MentalWellness.csv
+2025-10-18 23:30:26,405 - INFO - Dataset shape for training: (400, 14)
+2025-10-18 23:30:26,406 - INFO - Performed train-test split with test size 0.2. Train shape: (320, 13), Test shape: (80, 13)
+2025-10-18 23:30:26,406 - INFO - Splitted data into train and test sets and stratification on target column
+2025-10-18 23:30:26,406 - INFO - Initializing model for training
+2025-10-18 23:30:26,425 - INFO - ✅ Model training complete
+2025-10-18 23:30:26,426 - INFO - Evaluating model performance on test set
+2025-10-18 23:30:26,429 - INFO - ✅ Model evaluation complete
+2025-10-18 23:30:26,429 - INFO - Generating visualizations for model performance
+2025-10-18 23:30:26,797 - INFO - ✅ Model performance visualizations generated
+2025-10-18 23:30:26,797 - INFO - 💾 Trained model saved to Models/trained_model.pkl
+2025-10-18 23:30:26,797 - INFO - ======================================================================================================================================================
+2025-10-18 23:31:56,720 - INFO - Loaded model from Models/trained_model.pkl
+2025-10-18 23:31:56,720 - INFO - Loaded encoder from Models/label_encoder.pkl
+2025-10-18 23:31:56,723 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-10-18 23:31:56,723 - INFO - [33mPress CTRL+C to quit[0m
+2025-10-18 23:32:02,167 - INFO - 127.0.0.1 - - [18/Oct/2025 23:32:02] "GET / HTTP/1.1" 200 -
+2025-10-18 23:32:47,479 - INFO - 127.0.0.1 - - [18/Oct/2025 23:32:47] "POST /predict HTTP/1.1" 200 -
