@@ -18,9 +18,7 @@ logs/
 # Data and artifacts
 
 Artifacts/
-*.csv
 *.json
-*.pkl
 *.xlsx
 *.ipynb
 *.h5
@@ -45,7 +43,6 @@ MANIFEST
 # Environment and secrets
 .env
 .env.*
-config.local.json
 
 # OS files
 .DS_Store
