@@ -97,7 +97,7 @@ Open your browser at: http://localhost:5000
 ### Live (Render)
 You can deploy the app to a hosting provider (Render, Heroku, etc.). Replace the URL below with your deployment link:
 
-🔗 Oyasumi-Mind on Render — https://your-deployment-url.example.com
+🔗 Oyasumi-Mind on Render — https://oyasumi-mind.onrender.com/
 
 ### Docker
 
